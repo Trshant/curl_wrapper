@@ -1,3 +1,15 @@
+## 14JUN2019 ##
+Added a method GET/POST/PUT/DELETE dropdown so we can change the method for curl 
+Added a update commend button so we can see the updated command
+
+## TODO ##
+Add a panel to see the output
+Make the UI more intuitive
+
+## ADVANCED TODO ( wishlist ) ##
+Add a SQLITE db so that we can save the command under separate collections! 
+
+# -------------ORIGINAL RESCRIPTION from 5 years ago-----------#
 # cURL Wrapper #
 
 ![image](doc/images/screen_shot.png)

@@ -12,55 +12,59 @@ from subprocess import call
 class App:
     def __init__(self, master):
         master.title("cURL Wrapper")
+        self.master = master
 
-        frame = Frame(master)
-        self.frame = frame
-        self.frame.config(pad=10)
-        self.frame.pack()
-        self.frame.focus_set()
+        self.url_lbl = Label(master, text="URL")
 
-        self.url_lbl = Label(frame, text="URL")
         self.url = self.lookupList('url.values', ("http://server.host.com/"))
         self.url.config(width=72)
-        
-        self.account = Frame(self.frame)
-        self.account.pack()
-        self.user_lbl = Label(self.account, text="User Name")
-        self.user = Entry(self.account)
+
+        self.method = self.lookupList('url.values', ("GET","POST","PUT","DELETE"))
+        self.method.config(width=15)
+    
+        self.user_lbl = Label(master, text="User Name")
+
+        self.user = Entry(master)
         self.user.config(width=8)
-        self.passwd_lbl = Label(self.account, text="Password")
-        self.passwd = Entry(self.account, text="Password", show="*")
+
+        self.passwd_lbl = Label(master, text="Password")
+
+        self.passwd = Entry(master, text="Password", show="*")
         self.passwd.config(width=14)
 
-        self.head_lbl = Label(frame, text="HTTP Headers")
-        self.head_name_lbl = Label(frame, text="Name")
-        self.head_name = Combobox(frame)
+        self.head_lbl = Label(master, text="HTTP Headers")
+
+        self.head_name_lbl = Label(master, text="Name")
+        self.head_name = Combobox(master)
 
         def_list = ("Accept", "Content-Type")
         self.head_name = self.lookupList("head.names", def_list)
 
-        self.head_value_lbl = Label(frame, text="Value")
+        self.head_value_lbl = Label(master, text="Value")
 
         def_list = ("application/xml","text/plain","application/json","application/pdf")
         self.head_value = self.lookupList('head.values', def_list)
 
-        self.head_add = Button(frame,text="Add Header",command=self.addHeader)
-        self.headers = Listbox(frame,width=50,selectmode=MULTIPLE)
-        self.headers_rm = Button(frame, text="Remove", command=self.rmHeader)
+        self.head_add = Button(master,text="Add Header",command=self.addHeader)
+        self.headers = Listbox(master,width=50,selectmode=MULTIPLE)
+        self.headers_rm = Button(master, text="Remove", command=self.rmHeader)
 
-        self.param_lbl = Label(frame, text="Parameters")
-        self.param_name_lbl = Label(frame, text="Name")
-        self.param_name = Entry(frame)
+        self.param_lbl = Label(master, text="Parameters")
+        self.param_name_lbl = Label(master, text="Name")
+        self.param_name = Entry(master)
+
         self.param_name.insert(0,"param_name")
-        self.param_value_lbl = Label(frame, text="Value")
-        self.param_value = Entry(frame)
-        self.param_value.insert(0,"param_value")
-        self.param_addParam = Button(frame, text="Add Param", command=self.addParam)
-        self.param_addFile = Button(frame, text="Add File", command=self.pickParamFile)
+        self.param_value_lbl = Label(master, text="Value")
+        self.param_value = Entry(master)
 
-        self.cmd = Text(frame, height=10, width=90)
-        self.run = Button(frame,text="Run",command=self.doRun,name="doRun")
-        self.quit = Button(frame,text="Quit",command=frame.quit,name="quit")
+        self.param_value.insert(0,"param_value")
+        self.param_addParam = Button(master, text="Add Param", command=self.addParam)
+        self.param_addFile = Button(master, text="Add File", command=self.pickParamFile)
+        self.param_updatecommand = Button(master, text="Update Command", command=self.updateCmd)
+
+        self.cmd = Text(master, height=10, width=90)
+        self.run = Button(master,text="Run",command=self.doRun,name="doRun")
+        self.quit = Button(master,text="Quit",command=master.quit,name="quit")
 
         '''
 Layout Phase:
@@ -85,13 +89,16 @@ markdown table of the grid layout. spans between -> and <-
         '''
 
         self.url_lbl.grid(row=0,sticky=W)
-        self.url.grid(row=0,column=1,columnspan=3,sticky=E)
+        self.url.grid(row=0, column=1, columnspan=3, sticky=E)
+        self.method.grid(row=0, column=4, columnspan=1, sticky=E)
         
-        self.account.grid(row=1,columnspan=6,sticky=W)
-        self.user_lbl.grid(row=0)
-        self.user.grid(row=0,column=1)
-        self.passwd_lbl.grid(row=0,column=2)
-        self.passwd.grid(row=0,column=3)
+        '''
+         self.master.grid(row=1,columnspan=6,sticky=W)
+         self.user_lbl.grid(row=0)
+         self.user.grid(row=0,column=1)
+         self.passwd_lbl.grid(row=0,column=2)
+         self.passwd.grid(row=0,column=3)
+        '''
 
         self.head_lbl.grid(row=2,columnspan=3)
         self.head_name_lbl.grid(row=3)
@@ -107,6 +114,7 @@ markdown table of the grid layout. spans between -> and <-
         self.param_value.grid(row=8,column=1,columnspan=2)
         self.param_addFile.grid(row=9, column=1)
         self.param_addParam.grid(row=9, column=2)
+        self.param_updatecommand.grid(row=9, column=4)
 
         self.headers.grid(row=2,column=3,columnspan=2,rowspan=7)
         self.headers_rm.grid(row=9,column=3)
@@ -122,7 +130,11 @@ markdown table of the grid layout. spans between -> and <-
         
         command = ["curl","-s","-X","POST","--user-agent","Post_Maker_thing"]
                 
-        template = "curl \\\n\t-s -X POST \\\n\t--user-agent 'Post_Maker_thing' \\\n\t%s%s"
+        template = "curl \\\n\t-s -X %s \\\n\t--user-agent 'Post_Maker_thing' \\\n\t%s%s"
+
+        method_str     = self.method.get()
+        method_string  = "%s \\\n\t" % method_str
+        
         list = self.headers.get(0, self.headers.size())
         for item in list:
             hh = item.find("HH: ")
@@ -147,7 +159,8 @@ markdown table of the grid layout. spans between -> and <-
                 command.append("--data-urlencode")
                 command.append("%s@%s" % (trim(parts[0]), trim(parts[1])) )
 
-        c = template % (out, self.url.get())
+        c = template % (method_string, out, '"'+self.url.get()+'"')
+        self.c = c
         command.append(self.url.get().rstrip())
 
         self.cmd.delete(1.0, END)
@@ -187,8 +200,7 @@ markdown table of the grid layout. spans between -> and <-
         #if file == "": return
         #self.command.append(">")
         #self.command.append(file)
-        
-        #print self.command
+        print self.c
         call (self.command)
     
     def rmHeader(self):
@@ -203,7 +215,7 @@ markdown table of the grid layout. spans between -> and <-
         except IOError:
             list = def_list
 
-        cbox = Combobox(self.frame)
+        cbox = Combobox(self.master)
         cbox['values'] = list
         cbox.current(0)
 
